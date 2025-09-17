@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Power Grid Dashboard - Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .button:hover { background: #0056b3; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        #map { height: 400px; width: 100%; margin: 20px 0; border-radius: 8px; }
+        .tabs { display: flex; margin: 20px 0; }
+        .tab { background: #e9ecef; border: none; padding: 10px 20px; cursor: pointer; margin-right: 5px; }
+        .tab.active { background: #007bff; color: white; }
+        .tab-content { padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Power Grid Optimization Dashboard</h1>
+        
+        <div id="status" class="status info">Ready to start optimization</div>
+        
+        <button id="testBtn" class="button">Test Connection</button>
+        <button id="runOptimization" class="button">Run Optimization</button>
+        <button id="loadData" class="button">Load Data</button>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('map')">Map</button>
+            <button class="tab" onclick="showTab('progress')">Progress</button>
+            <button class="tab" onclick="showTab('data')">Output Data</button>
+        </div>
+        
+        <div class="tab-content">
+            <div id="map-panel" class="tab-panel active">
+                <h3>Interactive Map</h3>
+                <div id="map"></div>
+            </div>
+            
+            <div id="data-panel" class="tab-panel">
+                <h3>Data Tables</h3>
+                <div id="dataContent">Click "Load Data" to see CSV data</div>
+            </div>
+            
+            <div id="progress-panel" class="tab-panel">
+                <h3>Optimization Progress</h3>
+                <div id="progressContent">Run optimization to see progress</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        console.log('JavaScript loaded successfully');
+        
+        let map;
+        
+        // Initialize map
+        function initMap() {
+            console.log('Initializing map...');
+            map = L.map('map').setView([28.4595, 77.0266], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            console.log('Map initialized');
+        }
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        // Tab functionality
+        function showTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            // Hide all panels
+            const panels = document.querySelectorAll('.tab-panel');
+            panels.forEach(panel => panel.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected panel
+            document.getElementById(tabName + '-panel').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        // Test connection
+        async function testConnection() {
+            console.log('Testing connection...');
+            showStatus('Testing connection...', 'info');
+            
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                console.log('Test response:', data);
+                showStatus('Connection successful!', 'success');
+            } catch (error) {
+                console.error('Connection test failed:', error);
+                showStatus('Connection failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Load data
+        async function loadData() {
+            console.log('Loading data...');
+            showStatus('Loading data...', 'info');
+            
+            try {
+                const response = await fetch('/api/locations');
+                const locations = await response.json();
+                console.log('Locations loaded:', locations);
+                
+                // Update map with locations
+                if (map && locations.length > 0) {
+                    locations.forEach(location => {
+                        L.circleMarker([location.lat, location.lng], {
+                            radius: 8,
+                            fillColor: '#007bff',
+                            color: 'white',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).bindPopup(`<b>${location.name}</b><br>Bus: ${location.bus_no}<br>Type: ${location.type}`).addTo(map);
+                    });
+                }
+                
+                                document.getElementById('dataContent').innerHTML = `
+                    <h4>Locations loaded: ${locations.length}</h4>
+                    <div style="overflow-x: auto;">
+                        <table id="csvTable" style="width:100%; border-collapse: collapse; margin-top: 20px;">
+                            <thead>
+                                <tr>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Bus No</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Location</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Size (kW/kVAR)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Avg EV Per Day</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Avg SOC Arrival</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Avg SOC Departure</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Avg Battery (kWh)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Charging Points</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Land Cost</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Highway Proximity</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Population Density</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Electricity Cost</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Charging Efficiency</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Annual Elec Cost</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Annual Elec Cost (norm)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Land Cost (norm)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Land Cost Y</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Population Density Y</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Nearby Commercial</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Highway Proximity Y</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Nearby EV Seller</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">EV Density</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Malls Nearby</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">EV Seller (norm)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">EV Density (norm)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Malls Nearby (norm)</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Weighted Sum</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Latitude</th>
+                                    <th style="border:1px solid #ddd; padding:8px; background-color:#f2f2f2;">Longitude</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${locations.map(location => `
+                                    <tr>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.BusNo}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.Location}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.Size_kW_or_kVAR}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AvgEVPerDay}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AvgSOC_Arrival}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AvgSOC_Departure}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AvgBattery_kWh}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.NumChargingPoints}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.LandCost_x}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.ProximityToHighway_x}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.PopulationDensity_x}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.ElectricityCost}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.ChargingEfficiency}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AnnualElecCost}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.AnnualElecCost_norm}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.LandCost_norm}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.LandCost_y}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.PopulationDensity_y}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.NearbyCommercial}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.ProximityToHighway_y}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.NearbyEVSeller}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.EVDensity}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.MallsNearby}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.NearbyEVSeller_norm}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.EVDensity_norm}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.MallsNearby_norm}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.WeightedSum}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.lat}</td>
+                                        <td style="border:1px solid #ddd; padding:8px;">${location.lng}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                // show download button
+                                // Replace the problematic download button section with this:
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = 'Download CSV';
+                downloadButton.className = 'button';
+                downloadButton.onclick = () => {
+                    const headers = [
+                        'Bus No', 'Location', 'Size (kW/kVAR)', 'Avg EV Per Day', 
+                        'Avg SOC Arrival', 'Avg SOC Departure', 'Avg Battery (kWh)', 
+                        'Charging Points', 'Land Cost', 'Highway Proximity', 
+                        'Population Density', 'Electricity Cost', 'Charging Efficiency', 
+                        'Annual Elec Cost', 'Annual Elec Cost (norm)', 'Land Cost (norm)', 
+                        'Land Cost Y', 'Population Density Y', 'Nearby Commercial', 
+                        'Highway Proximity Y', 'Nearby EV Seller', 'EV Density', 
+                        'Malls Nearby', 'EV Seller (norm)', 'EV Density (norm)', 
+                        'Malls Nearby (norm)', 'Weighted Sum', 'Latitude', 'Longitude'
+                    ];
+                
+                    const csvContent = "data:text/csv;charset=utf-8," + 
+                        headers.join(',') + '\n' +
+                        locations.map(location => [
+                            location.BusNo, location.Location, location.Size_kW_or_kVAR, 
+                            location.AvgEVPerDay, location.AvgSOC_Arrival, location.AvgSOC_Departure, 
+                            location.AvgBattery_kWh, location.NumChargingPoints, location.LandCost_x, 
+                            location.ProximityToHighway_x, location.PopulationDensity_x, 
+                            location.ElectricityCost, location.ChargingEfficiency, 
+                            location.AnnualElecCost, location.AnnualElecCost_norm, 
+                            location.LandCost_norm, location.LandCost_y, 
+                            location.PopulationDensity_y, location.NearbyCommercial, 
+                            location.ProximityToHighway_y, location.NearbyEVSeller, 
+                            location.EVDensity, location.MallsNearby, 
+                            location.NearbyEVSeller_norm, location.EVDensity_norm, 
+                            location.MallsNearby_norm, location.WeightedSum,
+                            location.lat, location.lng
+                        ].join(',')).join('\n');
+                
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement('a');
+                    link.setAttribute('href', encodedUri);
+                    link.setAttribute('download', 'Final 10 locations.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                document.getElementById('dataContent').appendChild(downloadButton);
+
+                showStatus(`Loaded ${locations.length} locations successfully!`, 'success');
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                showStatus('Failed to load data: Run Optimization first', 'error');
+            }
+        }
+        
+        // Run optimization
+        async function runOptimization() {
+            console.log('Starting optimization...');
+            showStatus('Starting optimization...', 'info');
+            
+            try {
+                const response = await fetch('/api/run_optimization', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                console.log('Optimization response:', result);
+                
+                if (response.ok) {
+                    showStatus('Optimization started successfully!', 'success');
+                    
+                    // Poll for status
+                    const statusInterval = setInterval(async () => {
+                        try {
+                            const statusResponse = await fetch('/api/status');
+                            const status = await statusResponse.json();
+                            console.log('Status:', status);
+                            
+                            showStatus(`Status: ${status.status} (${status.progress}%)`, 'info');
+                            
+                            if (status.status === 'completed') {
+                                clearInterval(statusInterval);
+                                showStatus('Optimization completed!', 'success');
+                                
+                                // Update progress
+                                document.getElementById('progressContent').innerHTML = `
+                                    <h4>Optimization Progress</h4>
+                                    <pre>${JSON.stringify(status, null, 2)}</pre>
+                                `;
+                            }
+                            
+                            if (status.status === 'error') {
+                                clearInterval(statusInterval);
+                                showStatus('Optimization failed!', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Status polling error:', error);
+                        }
+                    }, 2000);
+                    
+                } else {
+                    showStatus('Failed to start optimization: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Optimization failed:', error);
+                showStatus('Optimization failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, setting up event listeners...');
+            
+            // Setup event listeners
+            document.getElementById('testBtn').addEventListener('click', testConnection);
+            document.getElementById('runOptimization').addEventListener('click', runOptimization);
+            document.getElementById('loadData').addEventListener('click', loadData);
+            
+            // Initialize map
+            initMap();
+            
+            console.log('Setup complete!');
+        });
+    </script>
+</body>
+</html>

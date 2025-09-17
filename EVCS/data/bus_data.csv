@@ -1,0 +1,50 @@
+BusNo,Location,Type,Load_kW,Load_kVAR,Min_V_pu,Max_V_pu
+2,DLF Phase 1,Residential,280,140,0.95,1.05
+3,DLF Phase 2,Residential,260,120,0.95,1.05
+4,DLF Phase 3,Residential,250,120,0.95,1.05
+5,DLF Phase 4,Residential,300,140,0.95,1.05
+6,DLF Phase 5,Residential,320,150,0.95,1.05
+7,Sector 14,Residential,200,95,0.95,1.05
+8,Sector 15,Residential,190,85,0.95,1.05
+9,Sector 21,Residential,210,100,0.95,1.05
+10,Sector 22,Residential,220,105,0.95,1.05
+11,Sector 23,Residential,205,95,0.95,1.05
+12,Sector 28,Residential,180,90,0.95,1.05
+13,Sector 29,Commercial,450,220,0.95,1.05
+14,Sector 31,Residential,190,90,0.95,1.05
+15,Sector 38,Residential,230,110,0.95,1.05
+16,Sector 43,Residential,170,80,0.95,1.05
+17,Sector 44,Commercial,380,170,0.95,1.05
+18,Sector 45,Residential,210,100,0.95,1.05
+19,Sector 46,Commercial,350,160,0.95,1.05
+20,Sector 47,Residential,250,115,0.95,1.05
+21,Sector 48,Commercial,390,180,0.95,1.05
+22,Sector 49,Residential,180,85,0.95,1.05
+23,Sector 50,Residential,160,80,0.95,1.05
+24,Sector 51,Residential,170,85,0.95,1.05
+25,Sector 52,Residential,165,75,0.95,1.05
+26,Sector 53,Residential,175,80,0.95,1.05
+27,Sector 54,Residential,190,85,0.95,1.05
+28,Sector 55,Residential,185,80,0.95,1.05
+29,Sector 56,Residential,200,90,0.95,1.05
+30,Sector 57,Residential,195,85,0.95,1.05
+31,Sector 58,Residential,170,80,0.95,1.05
+32,Sector 59,Residential,160,75,0.95,1.05
+33,Sector 60,Residential,175,80,0.95,1.05
+34,Sector 61,Residential,180,85,0.95,1.05
+35,Sector 62,Residential,170,80,0.95,1.05
+36,Sector 63,Residential,190,90,0.95,1.05
+37,Sector 65,Residential,195,85,0.95,1.05
+38,Sector 66,Residential,180,80,0.95,1.05
+39,Sector 67,Residential,175,80,0.95,1.05
+40,MG Road,Commercial,500,230,0.95,1.05
+41,Cyber City,Commercial,700,320,0.95,1.05
+42,Udyog Vihar,Industrial,900,380,0.95,1.05
+43,Hero Honda Chowk,Industrial,950,400,0.95,1.05
+44,IMT Manesar,Industrial,1100,480,0.95,1.05
+45,Sohna Road,Commercial,420,180,0.95,1.05
+46,Palam Vihar,Residential,220,100,0.95,1.05
+47,South City 1,Residential,180,85,0.95,1.05
+48,South City 2,Residential,175,80,0.95,1.05
+49,Suncity,Residential,190,85,0.95,1.05
+50,Golf Course Road,Commercial,600,250,0.95,1.05
